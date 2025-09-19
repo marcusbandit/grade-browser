@@ -84,9 +84,9 @@ GradeBrowser/
 └── README.md         # This file
 ```
 
-## Deployment Options
+## Sharing Options
 
-### 1. Local Network Sharing
+### Local Network Sharing
 
 To share with others on your local network:
 
@@ -104,34 +104,6 @@ To share with others on your local network:
 
 3. Others can access via `http://YOUR_IP:3000`
 
-### 2. Docker Deployment
-
-Create a `Dockerfile`:
-
-```dockerfile
-FROM node:18-alpine
-WORKDIR /app
-COPY package*.json ./
-RUN npm install
-COPY . .
-EXPOSE 3000
-CMD ["npm", "start"]
-```
-
-Build and run:
-```bash
-docker build -t grade-browser .
-docker run -p 3000:3000 grade-browser
-```
-
-### 3. Cloud Deployment
-
-The application can be deployed to various cloud platforms:
-
-- **Heroku**: Add a `Procfile` with `web: node server.js`
-- **Railway**: Connect your Git repository
-- **DigitalOcean App Platform**: Deploy from GitHub
-- **AWS EC2**: Run on a virtual server
 
 ## Troubleshooting
 
@@ -167,7 +139,7 @@ AutoLab-Root/
 
 ## License
 
-MIT License - see the LICENSE file for details.
+Apache License 2.0 - see the LICENSE file for details.
 
 ## Author
 
