@@ -1,15 +1,7 @@
 # GradeBrowser
 
-A simple web application to browse AutoLab grading reports with real-time updates.
-
-## Features
-
-- 📊 **Web-based Report Viewer**: Clean interface for viewing AutoLab HTML reports
-- 🔄 **Real-time Updates**: Automatically detects new reports via WebSocket
-- 🗂️ **Organized Navigation**: Browse reports by timestamp and check number
-- ⌨️ **Keyboard Shortcuts**: Navigate with arrow keys and refresh with Ctrl+R
-- 📱 **Responsive Design**: Works on desktop and mobile devices
-- 🚀 **Live File Watching**: Monitors AutoLab directory for new reports
+A simple web application for browsing AutoLab grading reports with real-time updates.
+Created because I was tired of copying and pasting HTML file locations from the terminal into my browser.
 
 ## Prerequisites
 
@@ -19,28 +11,57 @@ A simple web application to browse AutoLab grading reports with real-time update
 
 ## Quick Start
 
-1. **Clone or download this repository**
+1. **Clone this repository**
+
+   ```bash
+   git clone https://github.com/marcusbandit/grade-browser.git
+   ```
+
+   *Or download the ZIP from GitHub and extract it to a folder.*
+
 2. **Install dependencies**:
+
    ```bash
    npm install
    ```
+
 3. **Start the server**:
+
    ```bash
    npm start
    ```
+
 4. **Open your browser** and navigate to `http://localhost:3000`
+
+### Issues?
+
+If you got issues. Shoot me a message.
 
 ## Configuration
 
-The application automatically scans for AutoLab reports in the parent directory structure. It looks for directories with timestamp format `YYYY-MM-DD-HH-MM-SS` containing HTML report files named `checkXX-report.html`.
+The application can scan for AutoLab reports in any directory structure. It looks for directories with timestamp format `YYYY-MM-DD-HH-MM-SS` containing HTML report files named `checkXX-report.html`.
 
-### Custom Directory
+### Setting AutoLab Directory
 
-To monitor a different AutoLab directory, modify the `AUTOLAB_ROOT` variable in `server.js`:
+#### Option 1: Use the Web Interface (Recommended)
 
-```javascript
-const AUTOLAB_ROOT = path.join(__dirname, "../../"); // Change this path
+1. Open the GradeBrowser web interface
+2. Enter the path to your AutoLab root directory in the "AutoLab Root Directory" field
+3. Click "Set Path"
+4. The application will scan that directory for reports
+
+#### Option 2: Environment Variable
+
+Set the `AUTOLAB_ROOT` environment variable:
+
+```bash
+export AUTOLAB_ROOT="/path/to/your/autolab/directory"
+npm start
 ```
+
+#### Option 3: Modify server.js (Not Recommended)
+
+Change the `DEFAULT_AUTOLAB_ROOT` variable in `server.js`.
 
 ### Custom Port
 
@@ -52,6 +73,13 @@ const PORT = 3000; // Change this port
 
 ## Usage
 
+### Setting Up AutoLab Directory
+
+1. **Start the server**: `npm start`
+2. **Open browser**: Navigate to `http://localhost:3000`
+3. **Set AutoLab path**: Enter the path to your AutoLab root directory in the input field
+4. **Click "Set Path"**: The application will scan for reports
+
 ### Navigation
 
 - **Previous/Next Check**: Use the navigation buttons or arrow keys (←/→ or ↑/↓)
@@ -61,6 +89,7 @@ const PORT = 3000; // Change this port
 ### Report Structure
 
 Reports are organized by:
+
 - **Timestamp**: When the AutoLab run was executed
 - **Check Number**: Individual test checks within each run
 
@@ -73,38 +102,6 @@ The interface shows the newest reports first and allows navigation through all a
 - `npm start` - Start the production server
 - `npm run dev` - Start the development server (same as start)
 
-### Project Structure
-
-```
-GradeBrowser/
-├── server.js          # Main server application
-├── public/
-│   └── index.html     # Web interface
-├── package.json       # Dependencies and scripts
-└── README.md         # This file
-```
-
-## Sharing Options
-
-### Local Network Sharing
-
-To share with others on your local network:
-
-1. Find your local IP address:
-   ```bash
-   ip addr show  # Linux
-   ifconfig      # macOS/Linux
-   ipconfig      # Windows
-   ```
-
-2. Modify `server.js` to listen on all interfaces:
-   ```javascript
-   server.listen(PORT, '0.0.0.0', () => {
-   ```
-
-3. Others can access via `http://YOUR_IP:3000`
-
-
 ## Troubleshooting
 
 ### Common Issues
@@ -116,7 +113,8 @@ To share with others on your local network:
 ### File Structure Requirements
 
 AutoLab reports should follow this structure:
-```
+
+```bash
 AutoLab-Root/
 ├── Module01/
 │   └── m01a01handout/
@@ -148,9 +146,10 @@ Marcus Rosado
 ## Support
 
 For issues or questions:
+
 1. Check the troubleshooting section above
 2. Create an issue in the repository
-3. Contact the author
+3. Contact me!
 
 ---
 

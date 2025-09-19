@@ -9,8 +9,11 @@ const app = express();
 
 // Environment configuration
 const PORT = process.env.PORT || 3000;
-const AUTOLAB_ROOT = process.env.AUTOLAB_ROOT || path.join(__dirname, "../../");
+const DEFAULT_AUTOLAB_ROOT = process.env.AUTOLAB_ROOT || path.join(__dirname, "../../");
 const NODE_ENV = process.env.NODE_ENV || "development";
+
+// Dynamic AutoLab root path (can be changed by user)
+let currentAutoLabRoot = DEFAULT_AUTOLAB_ROOT;
 
 // Store WebSocket connections
 const clients = new Set();
@@ -22,14 +25,50 @@ const wss = new WebSocket.Server({ server });
 // Serve static files
 app.use(express.static(path.join(__dirname, "public")));
 
+// Parse JSON bodies
+app.use(express.json());
+
+// API endpoint to set AutoLab root path
+app.post("/api/set-path", (req, res) => {
+  try {
+    const { path } = req.body;
+    
+    if (!path || typeof path !== 'string') {
+      return res.status(400).json({ error: "Invalid path provided" });
+    }
+
+    // Validate that the path exists and is a directory
+    if (!fs.existsSync(path)) {
+      return res.status(400).json({ error: "Path does not exist" });
+    }
+
+    const stat = fs.statSync(path);
+    if (!stat.isDirectory()) {
+      return res.status(400).json({ error: "Path is not a directory" });
+    }
+
+    currentAutoLabRoot = path;
+    console.log(`AutoLab root path updated to: ${path}`);
+    
+    res.json({ message: "Path updated successfully", path: path });
+  } catch (error) {
+    console.error("Error setting path:", error);
+    res.status(500).json({ error: "Failed to set path: " + error.message });
+  }
+});
+
 // API endpoint to get all HTML reports
 app.get("/api/reports", (req, res) => {
   try {
-    const reports = scanForReports();
+    // Allow path override via query parameter
+    const requestedPath = req.query.path;
+    const searchPath = requestedPath || currentAutoLabRoot;
+    
+    const reports = scanForReports(searchPath);
     res.json(reports);
   } catch (error) {
     console.error("Error scanning reports:", error);
-    res.status(500).json({ error: "Failed to scan reports" });
+    res.status(500).json({ error: "Failed to scan reports: " + error.message });
   }
 });
 
@@ -52,7 +91,7 @@ app.get("/api/report/:timestamp/:checkId", (req, res) => {
 });
 
 // Function to scan for all HTML reports
-function scanForReports() {
+function scanForReports(rootPath = currentAutoLabRoot) {
   const reports = [];
 
   function scanDirectory(dirPath) {
@@ -111,7 +150,7 @@ function scanForReports() {
     return checks;
   }
 
-  scanDirectory(AUTOLAB_ROOT);
+  scanDirectory(rootPath);
 
   // Sort reports by timestamp (newest first)
   reports.sort((a, b) => b.timestamp.localeCompare(a.timestamp));
@@ -154,7 +193,7 @@ function findTimestampDirectory(timestamp) {
     return null;
   }
 
-  return searchDirectory(AUTOLAB_ROOT);
+  return searchDirectory(currentAutoLabRoot);
 }
 
 // WebSocket connection handling
@@ -184,9 +223,9 @@ function notifyClients(event, data) {
 }
 
 // Set up file watching
-console.log("Setting up file watcher for:", AUTOLAB_ROOT);
+console.log("Setting up file watcher for:", currentAutoLabRoot);
 
-const watcher = chokidar.watch(AUTOLAB_ROOT, {
+const watcher = chokidar.watch(currentAutoLabRoot, {
   ignored: /(^|[\/\\])\../, // ignore dotfiles
   persistent: true,
   ignoreInitial: true,
@@ -211,7 +250,8 @@ const HOST = process.env.HOST || 'localhost';
 server.listen(PORT, HOST, () => {
   console.log(`GradeBrowser server running on http://${HOST}:${PORT}`);
   console.log(`Environment: ${NODE_ENV}`);
-  console.log(`Monitoring directory: ${AUTOLAB_ROOT}`);
+  console.log(`Default AutoLab directory: ${currentAutoLabRoot}`);
+  console.log(`Use the web interface to set a custom AutoLab path if needed`);
 });
 
 // Graceful shutdown

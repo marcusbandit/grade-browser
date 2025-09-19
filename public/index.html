@@ -100,10 +100,23 @@
             padding: 15px 20px;
             border-bottom: 1px solid #ddd;
             display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .controls-top {
+            display: flex;
             justify-content: space-between;
             align-items: center;
             flex-wrap: wrap;
             gap: 10px;
+        }
+
+        .path-controls {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
         }
 
         .nav-controls {
@@ -143,6 +156,21 @@
         .info {
             font-size: 14px;
             color: #666;
+        }
+
+        .path-input {
+            flex: 1;
+            min-width: 300px;
+            padding: 8px 12px;
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            font-size: 14px;
+        }
+
+        .path-input:focus {
+            outline: none;
+            border-color: #007bff;
+            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
         }
 
         .content {
@@ -211,19 +239,28 @@
     </div>
 
     <div class="controls">
-        <div class="nav-controls">
-            <button class="btn secondary" id="prevCheck" onclick="navigateCheck(-1)" disabled>
-                ← Previous Check
-            </button>
-            <button class="btn secondary" id="nextCheck" onclick="navigateCheck(1)" disabled>
-                Next Check →
-            </button>
-            <button class="btn" id="refreshBtn" onclick="refreshReports()">
-                Refresh
-            </button>
+        <div class="controls-top">
+            <div class="nav-controls">
+                <button class="btn secondary" id="prevCheck" onclick="navigateCheck(-1)" disabled>
+                    ← Previous Check
+                </button>
+                <button class="btn secondary" id="nextCheck" onclick="navigateCheck(1)" disabled>
+                    Next Check →
+                </button>
+                <button class="btn" id="refreshBtn" onclick="refreshReports()">
+                    Refresh
+                </button>
+            </div>
+            <div class="info" id="reportInfo">
+                No reports available
+            </div>
         </div>
-        <div class="info" id="reportInfo">
-            No reports available
+        <div class="path-controls">
+            <label for="autolabPath" style="font-weight: bold;">AutoLab Root Directory:</label>
+            <input type="text" id="autolabPath" class="path-input" placeholder="/path/to/autolab/reports" />
+            <button class="btn secondary" id="setPathBtn" onclick="setAutoLabPath()">
+                Set Path
+            </button>
         </div>
     </div>
 
@@ -242,6 +279,7 @@
         let currentTimestampIndex = 0;
         let currentCheckIndex = 0;
         let ws = null;
+        let currentAutoLabPath = null;
 
         // Initialize WebSocket connection
         function initWebSocket() {
@@ -290,10 +328,47 @@
             }
         }
 
+        // Set AutoLab root path
+        async function setAutoLabPath() {
+            const pathInput = document.getElementById('autolabPath');
+            const path = pathInput.value.trim();
+            
+            if (!path) {
+                alert('Please enter a path to the AutoLab root directory');
+                return;
+            }
+
+            try {
+                const response = await fetch('/api/set-path', {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({ path: path })
+                });
+
+                if (!response.ok) {
+                    const error = await response.json();
+                    throw new Error(error.error || 'Failed to set path');
+                }
+
+                currentAutoLabPath = path;
+                console.log('AutoLab path set to:', path);
+                
+                // Refresh reports with new path
+                refreshReports();
+                
+            } catch (error) {
+                console.error('Error setting path:', error);
+                alert('Error setting path: ' + error.message);
+            }
+        }
+
         // Load all reports from the server
         async function refreshReports() {
             try {
-                const response = await fetch('/api/reports');
+                const url = currentAutoLabPath ? `/api/reports?path=${encodeURIComponent(currentAutoLabPath)}` : '/api/reports';
+                const response = await fetch(url);
                 if (!response.ok) {
                     throw new Error('Failed to fetch reports');
                 }
@@ -475,6 +550,9 @@
         document.addEventListener('DOMContentLoaded', function () {
             initWebSocket();
 
+            // Set default path in input field
+            document.getElementById('autolabPath').placeholder = 'Enter path to AutoLab root directory...';
+            
             // Also try to load reports immediately (in case WebSocket takes time)
             refreshReports();
         });

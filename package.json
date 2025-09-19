@@ -6,7 +6,6 @@
   "scripts": {
     "start": "node server.js",
     "dev": "node server.js",
-    "install-deps": "npm install",
     "clean": "rm -rf node_modules package-lock.json",
     "reset": "npm run clean && npm install"
   },
