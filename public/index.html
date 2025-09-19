@@ -1,0 +1,484 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>GradeBrowser - AutoLab Report Viewer</title>
+    <style>
+        :root {
+            --darkreader-neutral-background: var(--darkreader-background-ffffff, #181a1b);
+            --darkreader-neutral-text: var(--darkreader-text-000000, #e8e6e3);
+            --darkreader-selection-background: var(--darkreader-background-0060d4, #004daa);
+            --darkreader-selection-text: var(--darkreader-text-ffffff, #e8e6e3);
+            --darkreader-background-ffffff: #181a1b;
+            --darkreader-text-ffffff: #e8e6e3;
+            --darkreader-border-404040: #776e62;
+            --darkreader-text-000000: #e8e6e3;
+            --darkreader-border-4c4c4c: #736b5e;
+            --darkreader-text-0040ff: #3391ff;
+            --darkreader-border-808080: #545b5e;
+            --darkreader-text-a9a9a9: #b2aba1;
+            --darkreader-background-faffbd: #404400;
+            --darkreader-background-0060d4: #004daa;
+            --darkreader-background-ffd76e: #684b00;
+            --darkreader-background-c59d00: #9e7e00;
+            --darkreader-text-302505: #d7d4cf;
+            --darkreader-background-add8e6: #1b4958;
+            --darkreader-background-cfecf5: #0f3a47;
+            --darkreader-background-f5f5f5: #1e2021;
+            --darkreader-background-faedda: #432c09;
+            --darkreader-background-85c3d8: #245d70;
+            --darkreader-background-d3d3d3: #313537;
+            --darkreader-background-f08080: #7a0e0e;
+            --darkreader-text-808080: #988f81;
+            --darkreader-background-ffff00: #999900;
+            --darkreader-text-d3d3d3: #ccc8c1;
+            --darkreader-text-8b0000: #ff6b6b;
+            --darkreader-background-00000000: rgba(0, 0, 0, 0);
+            --darkreader-background-90ee90: #286f11;
+            --darkreader-background-808080: #60686c;
+            --darkreader-background-ff0000: #cc0000;
+        }
+
+
+        html,
+        body {
+            border-color: var(--darkreader-border-4c4c4c, #736b5e);
+            color: var(--darkreader-text-000000, #e8e6e3);
+        }
+
+        html,
+        body {
+            background-color: var(--darkreader-background-ffffff, #181a1b);
+        }
+
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: Arial, sans-serif;
+            background-color: #f5f5f5;
+            height: 100vh;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .header {
+            background-color: #333;
+            color: white;
+            padding: 10px 20px;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+        }
+
+        .header h1 {
+            font-size: 1.5em;
+        }
+
+        .status {
+            font-size: 0.9em;
+            opacity: 0.8;
+        }
+
+        .status.connected {
+            color: #4CAF50;
+        }
+
+        .status.disconnected {
+            color: #f44336;
+        }
+
+        .controls {
+            background-color: white;
+            padding: 15px 20px;
+            border-bottom: 1px solid #ddd;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 10px;
+        }
+
+        .nav-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .btn {
+            background-color: #007bff;
+            color: white;
+            border: none;
+            padding: 8px 16px;
+            border-radius: 4px;
+            cursor: pointer;
+            font-size: 14px;
+            transition: background-color 0.2s;
+        }
+
+        .btn:hover {
+            background-color: #0056b3;
+        }
+
+        .btn:disabled {
+            background-color: #ccc;
+            cursor: not-allowed;
+        }
+
+        .btn.secondary {
+            background-color: #6c757d;
+        }
+
+        .btn.secondary:hover {
+            background-color: #545b62;
+        }
+
+        .info {
+            font-size: 14px;
+            color: #666;
+        }
+
+        .content {
+            flex: 1;
+            overflow: hidden;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .report-frame {
+            flex: 1;
+            border: none;
+            background-color: white;
+            width: 100%;
+            height: 100%;
+        }
+
+        .loading {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            font-size: 18px;
+            color: #666;
+        }
+
+        .error {
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            height: 100%;
+            font-size: 18px;
+            color: #f44336;
+            text-align: center;
+            padding: 20px;
+        }
+
+        .hidden {
+            display: none;
+        }
+
+        @media (max-width: 768px) {
+            .controls {
+                flex-direction: column;
+                align-items: stretch;
+            }
+
+            .nav-controls {
+                justify-content: center;
+            }
+
+            .info {
+                text-align: center;
+                margin-top: 10px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+    <div class="header">
+        <h1>GradeBrowser</h1>
+        <div class="status disconnected" id="connectionStatus">
+            Disconnected
+        </div>
+    </div>
+
+    <div class="controls">
+        <div class="nav-controls">
+            <button class="btn secondary" id="prevCheck" onclick="navigateCheck(-1)" disabled>
+                ← Previous Check
+            </button>
+            <button class="btn secondary" id="nextCheck" onclick="navigateCheck(1)" disabled>
+                Next Check →
+            </button>
+            <button class="btn" id="refreshBtn" onclick="refreshReports()">
+                Refresh
+            </button>
+        </div>
+        <div class="info" id="reportInfo">
+            No reports available
+        </div>
+    </div>
+
+    <div class="content">
+        <iframe id="reportFrame" class="report-frame hidden"></iframe>
+        <div id="loadingMessage" class="loading">
+            Loading reports...
+        </div>
+        <div id="errorMessage" class="error hidden">
+            No reports found. Run some AutoLab tests to generate reports.
+        </div>
+    </div>
+
+    <script>
+        let reports = [];
+        let currentTimestampIndex = 0;
+        let currentCheckIndex = 0;
+        let ws = null;
+
+        // Initialize WebSocket connection
+        function initWebSocket() {
+            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
+            const wsUrl = `${protocol}//${window.location.host}`;
+
+            ws = new WebSocket(wsUrl);
+
+            ws.onopen = function () {
+                console.log('WebSocket connected');
+                updateConnectionStatus(true);
+                refreshReports();
+            };
+
+            ws.onclose = function () {
+                console.log('WebSocket disconnected');
+                updateConnectionStatus(false);
+                // Attempt to reconnect after 3 seconds
+                setTimeout(initWebSocket, 3000);
+            };
+
+            ws.onerror = function (error) {
+                console.error('WebSocket error:', error);
+                updateConnectionStatus(false);
+            };
+
+            ws.onmessage = function (event) {
+                const message = JSON.parse(event.data);
+                console.log('WebSocket message:', message);
+
+                if (message.event === 'newReport' || message.event === 'reportChanged') {
+                    // Refresh reports when new ones are detected
+                    refreshReports();
+                }
+            };
+        }
+
+        function updateConnectionStatus(connected) {
+            const statusEl = document.getElementById('connectionStatus');
+            if (connected) {
+                statusEl.textContent = 'Connected';
+                statusEl.className = 'status connected';
+            } else {
+                statusEl.textContent = 'Disconnected';
+                statusEl.className = 'status disconnected';
+            }
+        }
+
+        // Load all reports from the server
+        async function refreshReports() {
+            try {
+                const response = await fetch('/api/reports');
+                if (!response.ok) {
+                    throw new Error('Failed to fetch reports');
+                }
+
+                reports = await response.json();
+
+                if (reports.length === 0) {
+                    showNoReports();
+                    return;
+                }
+
+                // Always show the newest report (first in the list)
+                currentTimestampIndex = 0;
+                currentCheckIndex = 0;
+
+                loadCurrentReport();
+                updateControls();
+
+            } catch (error) {
+                console.error('Error loading reports:', error);
+                showError('Failed to load reports');
+            }
+        }
+
+        // Load the currently selected report
+        async function loadCurrentReport() {
+            if (reports.length === 0) return;
+
+            const currentReport = reports[currentTimestampIndex];
+            const currentCheck = currentReport.checks[currentCheckIndex];
+
+            if (!currentCheck) {
+                showError('No checks available for this timestamp');
+                return;
+            }
+
+            try {
+                showLoading();
+
+                const response = await fetch(`/api/report/${currentReport.timestamp}/${currentCheck.checkId}`);
+                if (!response.ok) {
+                    throw new Error('Failed to load report');
+                }
+
+                const htmlContent = await response.text();
+
+                // Update iframe content
+                const frame = document.getElementById('reportFrame');
+                frame.srcdoc = htmlContent;
+                frame.classList.remove('hidden');
+
+                // Update info display
+                updateReportInfo();
+
+                hideLoading();
+                hideError();
+
+            } catch (error) {
+                console.error('Error loading report:', error);
+                showError('Failed to load report');
+            }
+        }
+
+        // Navigate between checks
+        function navigateCheck(direction) {
+            if (reports.length === 0) return;
+
+            const currentReport = reports[currentTimestampIndex];
+
+            if (direction === -1) {
+                // Previous check
+                if (currentCheckIndex > 0) {
+                    currentCheckIndex--;
+                } else if (currentTimestampIndex < reports.length - 1) {
+                    // Move to previous timestamp, last check
+                    currentTimestampIndex++;
+                    currentCheckIndex = reports[currentTimestampIndex].checks.length - 1;
+                }
+            } else {
+                // Next check
+                if (currentCheckIndex < currentReport.checks.length - 1) {
+                    currentCheckIndex++;
+                } else if (currentTimestampIndex > 0) {
+                    // Move to next timestamp, first check
+                    currentTimestampIndex--;
+                    currentCheckIndex = 0;
+                }
+            }
+
+            loadCurrentReport();
+            updateControls();
+        }
+
+        // Update navigation controls
+        function updateControls() {
+            const prevBtn = document.getElementById('prevCheck');
+            const nextBtn = document.getElementById('nextCheck');
+
+            if (reports.length === 0) {
+                prevBtn.disabled = true;
+                nextBtn.disabled = true;
+                return;
+            }
+
+            const currentReport = reports[currentTimestampIndex];
+            const hasPrev = currentCheckIndex > 0 || currentTimestampIndex < reports.length - 1;
+            const hasNext = currentCheckIndex < currentReport.checks.length - 1 || currentTimestampIndex > 0;
+
+            prevBtn.disabled = !hasPrev;
+            nextBtn.disabled = !hasNext;
+        }
+
+        // Update report info display
+        function updateReportInfo() {
+            if (reports.length === 0) return;
+
+            const currentReport = reports[currentTimestampIndex];
+            const currentCheck = currentReport.checks[currentCheckIndex];
+
+            const info = `Timestamp: ${currentReport.timestamp} | Check: ${currentCheck.checkId} | Total Checks: ${currentReport.checks.length}`;
+            document.getElementById('reportInfo').textContent = info;
+        }
+
+        // Show/hide different states
+        function showLoading() {
+            document.getElementById('loadingMessage').classList.remove('hidden');
+            document.getElementById('reportFrame').classList.add('hidden');
+            document.getElementById('errorMessage').classList.add('hidden');
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingMessage').classList.add('hidden');
+        }
+
+        function showError(message) {
+            document.getElementById('errorMessage').textContent = message;
+            document.getElementById('errorMessage').classList.remove('hidden');
+            document.getElementById('reportFrame').classList.add('hidden');
+            document.getElementById('loadingMessage').classList.add('hidden');
+        }
+
+        function hideError() {
+            document.getElementById('errorMessage').classList.add('hidden');
+        }
+
+        function showNoReports() {
+            showError('No reports found. Run some AutoLab tests to generate reports.');
+        }
+
+        // Keyboard navigation
+        document.addEventListener('keydown', function (event) {
+            // Only handle arrow keys if not in an input field
+            if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') {
+                return;
+            }
+
+            switch (event.key) {
+                case 'ArrowLeft':
+                case 'ArrowUp':
+                    event.preventDefault();
+                    navigateCheck(-1);
+                    break;
+                case 'ArrowRight':
+                case 'ArrowDown':
+                    event.preventDefault();
+                    navigateCheck(1);
+                    break;
+                case 'r':
+                case 'R':
+                    if (event.ctrlKey || event.metaKey) {
+                        event.preventDefault();
+                        refreshReports();
+                    }
+                    break;
+            }
+        });
+
+        // Initialize the application
+        document.addEventListener('DOMContentLoaded', function () {
+            initWebSocket();
+
+            // Also try to load reports immediately (in case WebSocket takes time)
+            refreshReports();
+        });
+    </script>
+</body>
+
+</html>
