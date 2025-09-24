@@ -5,9 +5,14 @@ Created because I was tired of copying and pasting HTML file locations from the 
 
 ## Prerequisites
 
-- Node.js (version 14 or higher)
-- npm (comes with Node.js)
+- [Git](https://git-scm.com/)
+- [Node.js](https://nodejs.org/en/download) (version 14 or higher)
+- npm (comes with Node.js) 
 - AutoLab installation with grading reports
+
+### Node install guide
+
+
 
 ## Quick Start
 
