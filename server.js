@@ -82,13 +82,68 @@ app.get("/api/report/:timestamp/:checkId", (req, res) => {
       return res.status(404).json({ error: "Report not found" });
     }
 
-    const content = fs.readFileSync(reportPath, "utf8");
+    let content = fs.readFileSync(reportPath, "utf8");
+    
+    // Fix CSS pseudo-elements issue by replacing them with actual HTML content
+    content = fixCssPseudoElements(content);
+    
     res.send(content);
   } catch (error) {
     console.error("Error reading report:", error);
     res.status(500).json({ error: "Failed to read report" });
   }
 });
+
+// Function to fix CSS pseudo-elements by replacing them with actual HTML content
+function fixCssPseudoElements(htmlContent) {
+  // Replace empty elements that use CSS :after pseudo-elements with actual content
+  const replacements = [
+    {
+      selector: 'div#compilationOutput .noCompilationOutput',
+      content: '(None)'
+    },
+    {
+      selector: 'div#input .noinput',
+      content: '(None)'
+    },
+    {
+      selector: 'div#args .noargs',
+      content: '(None)'
+    },
+    {
+      selector: 'div#errors .noerrors',
+      content: '(None)'
+    },
+    {
+      selector: 'div#stderr .noerrors',
+      content: '(None)'
+    }
+  ];
+
+  let fixedContent = htmlContent;
+
+  // Replace each empty element with its content
+  replacements.forEach(({ selector, content }) => {
+    // Create a regex to match the empty span elements
+    const regex = new RegExp(`<span class="noCompilationOutput"></span>|<span class="noinput"></span>|<span class="noargs"></span>|<span class="noerrors"></span>`, 'g');
+    
+    // Replace with content wrapped in a span with appropriate styling
+    fixedContent = fixedContent.replace(regex, (match) => {
+      if (match.includes('noCompilationOutput')) {
+        return `<span class="noCompilationOutput" style="color: gray; font-style: italic; font-family: serif; font-size: smaller;">${content}</span>`;
+      } else if (match.includes('noinput')) {
+        return `<span class="noinput" style="color: gray; font-style: italic; font-family: serif; font-size: smaller;">${content}</span>`;
+      } else if (match.includes('noargs')) {
+        return `<span class="noargs" style="color: gray; font-style: italic; font-family: serif; font-size: smaller;">${content}</span>`;
+      } else if (match.includes('noerrors')) {
+        return `<span class="noerrors" style="color: gray; font-style: italic; font-family: serif; font-size: smaller;">${content}</span>`;
+      }
+      return match;
+    });
+  });
+
+  return fixedContent;
+}
 
 // Function to scan for all HTML reports
 function scanForReports(rootPath = currentAutoLabRoot) {
@@ -163,10 +218,20 @@ function findReportFile(timestamp, checkId) {
   const timestampDir = findTimestampDirectory(timestamp);
   if (!timestampDir) return null;
 
-  const checkFile = `check${checkId.toString().padStart(2, "0")}-report.html`;
-  const fullPath = path.join(timestampDir, checkFile);
+  // Try both 4-digit and 2-digit padding formats
+  const checkFile4 = `check${checkId.toString().padStart(4, "0")}-report.html`;
+  const checkFile2 = `check${checkId.toString().padStart(2, "0")}-report.html`;
+  
+  const fullPath4 = path.join(timestampDir, checkFile4);
+  const fullPath2 = path.join(timestampDir, checkFile2);
 
-  return fs.existsSync(fullPath) ? fullPath : null;
+  if (fs.existsSync(fullPath4)) {
+    return fullPath4;
+  } else if (fs.existsSync(fullPath2)) {
+    return fullPath2;
+  }
+  
+  return null;
 }
 
 // Function to find timestamp directory path

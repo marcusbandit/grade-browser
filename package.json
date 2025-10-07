@@ -4,10 +4,10 @@
   "description": "Simple web application to browse AutoLab grading reports",
   "main": "server.js",
   "scripts": {
-    "start": "node server.js",
-    "dev": "node server.js",
+    "start": "bun run server.js",
+    "dev": "bun run server.js",
     "clean": "rm -rf node_modules package-lock.json",
-    "reset": "npm run clean && npm install"
+    "reset": "bun run clean && bun install"
   },
   "dependencies": {
     "express": "^4.18.2",
