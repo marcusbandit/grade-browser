@@ -1,0 +1,22 @@
+[Unit]
+Description=GradeBrowser - AutoLab Report Browser
+After=network.target
+
+[Service]
+Type=simple
+User=bandit
+WorkingDirectory=/home/bandit/Projects/DTU/AutoLab-Java/Tools/GradeBrowser
+Environment="PORT=3000"
+Environment="AUTOLAB_ROOT=/home/bandit/Projects/DTU/AutoLab-Java"
+Environment="NODE_ENV=production"
+ExecStart=/home/bandit/.bun/bin/bun run server.js
+Restart=on-failure
+RestartSec=10s
+
+# Logging
+StandardOutput=journal
+StandardError=journal
+SyslogIdentifier=gradebrowser
+
+[Install]
+WantedBy=multi-user.target

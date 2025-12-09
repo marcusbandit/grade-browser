@@ -185,19 +185,21 @@ function scanForReports(rootPath = currentAutoLabRoot) {
       const files = fs.readdirSync(timestampDir);
 
       for (const file of files) {
-        const match = file.match(/^check(\d+)-report\.html$/);
+        // Match ANY file that ends with "-report.html"
+        // and treat everything before that suffix as the checkId.
+        const match = file.match(/^(.+)-report\.html$/);
         if (match) {
-          const checkNumber = parseInt(match[1]);
+          const checkId = match[1]; // e.g. "check01", "check01-01", "whatever-prefix"
           checks.push({
-            checkId: checkNumber,
+            checkId,
             filename: file,
             path: path.join(timestampDir, file),
           });
         }
       }
 
-      // Sort by check number
-      checks.sort((a, b) => a.checkId - b.checkId);
+      // Sort alphabetically by filename (also sorts numbered names correctly)
+      checks.sort((a, b) => a.filename.localeCompare(b.filename));
     } catch (error) {
       console.error(`Error scanning timestamp directory ${timestampDir}:`, error);
     }
@@ -218,17 +220,12 @@ function findReportFile(timestamp, checkId) {
   const timestampDir = findTimestampDirectory(timestamp);
   if (!timestampDir) return null;
 
-  // Try both 4-digit and 2-digit padding formats
-  const checkFile4 = `check${checkId.toString().padStart(4, "0")}-report.html`;
-  const checkFile2 = `check${checkId.toString().padStart(2, "0")}-report.html`;
-  
-  const fullPath4 = path.join(timestampDir, checkFile4);
-  const fullPath2 = path.join(timestampDir, checkFile2);
+  // checkId is everything before -report.html, so reconstruct filename
+  const checkFile = `${checkId}-report.html`;
+  const fullPath = path.join(timestampDir, checkFile);
 
-  if (fs.existsSync(fullPath4)) {
-    return fullPath4;
-  } else if (fs.existsSync(fullPath2)) {
-    return fullPath2;
+  if (fs.existsSync(fullPath)) {
+    return fullPath;
   }
   
   return null;

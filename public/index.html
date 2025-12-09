@@ -95,6 +95,10 @@
             color: #f44336;
         }
 
+        .status.waiting {
+            color: #ff9800;
+        }
+
         .controls {
             background-color: white;
             padding: 15px 20px;
@@ -280,6 +284,11 @@
         let currentCheckIndex = 0;
         let ws = null;
         let currentAutoLabPath = null;
+        let pendingRefreshTimer = null;
+        let lastFileActivity = null;
+        let newTimestampDetected = false;
+        let preservedCheckId = null; // Store the checkId we want to preserve
+        const FILE_ACTIVITY_DELAY = 800; // 0.8 seconds
 
         // Initialize WebSocket connection
         function initWebSocket() {
@@ -311,15 +320,74 @@
                 console.log('WebSocket message:', message);
 
                 if (message.event === 'newReport' || message.event === 'reportChanged') {
-                    // Refresh reports when new ones are detected
-                    refreshReports();
+                    const filePath = message.data.filePath;
+                    
+                    // Only process HTML report files
+                    if (!filePath.endsWith('-report.html')) {
+                        console.log('Ignoring non-report file:', filePath);
+                        return;
+                    }
+                    
+                    // Check if this is a new timestamp folder
+                    const timestampMatch = filePath.match(/(\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2})/);
+                    
+                    if (!timestampMatch) {
+                        console.log('Could not extract timestamp from:', filePath);
+                        return;
+                    }
+                    
+                    const newTimestamp = timestampMatch[1];
+                    const currentTimestamp = reports.length > 0 ? reports[currentTimestampIndex].timestamp : null;
+                    
+                    // Only handle files in NEW timestamp folders
+                    if (newTimestamp === currentTimestamp) {
+                        console.log('File in current timestamp, refreshing immediately');
+                        refreshReports(false); // Just refresh, don't preserve
+                        return;
+                    }
+                    
+                    // This is a new timestamp - start/continue the settling process
+                    console.log(`File in new timestamp: ${newTimestamp} (current: ${currentTimestamp})`);
+                    lastFileActivity = Date.now();
+                    
+                    if (!newTimestampDetected) {
+                        // First time detecting this new timestamp - save current checkId
+                        newTimestampDetected = true;
+                        
+                        if (reports.length > 0 && reports[currentTimestampIndex] && reports[currentTimestampIndex].checks[currentCheckIndex]) {
+                            preservedCheckId = reports[currentTimestampIndex].checks[currentCheckIndex].checkId;
+                            console.log(`Saving current report: check${preservedCheckId}-report.html`);
+                        }
+                        
+                        updateConnectionStatus('waiting');
+                    }
+                    
+                    // Clear any pending refresh timer
+                    if (pendingRefreshTimer) {
+                        clearTimeout(pendingRefreshTimer);
+                    }
+                    
+                    // Set a new timer to refresh after delay
+                    pendingRefreshTimer = setTimeout(() => {
+                        console.log(`No new files for ${FILE_ACTIVITY_DELAY}ms, loading new timestamp...`);
+                        if (preservedCheckId) {
+                            console.log(`Attempting to stay on check${preservedCheckId}-report.html`);
+                        }
+                        updateConnectionStatus(true); // Back to connected
+                        refreshReports(true); // true = preserve current checkId
+                        newTimestampDetected = false;
+                        preservedCheckId = null;
+                    }, FILE_ACTIVITY_DELAY);
                 }
             };
         }
 
         function updateConnectionStatus(connected) {
             const statusEl = document.getElementById('connectionStatus');
-            if (connected) {
+            if (connected === 'waiting') {
+                statusEl.textContent = `Waiting for files to settle (${FILE_ACTIVITY_DELAY}ms)...`;
+                statusEl.className = 'status waiting';
+            } else if (connected) {
                 statusEl.textContent = 'Connected';
                 statusEl.className = 'status connected';
             } else {
@@ -365,24 +433,55 @@
         }
 
         // Load all reports from the server
-        async function refreshReports() {
+        async function refreshReports(shouldPreserveCheckId = false) {
             try {
+                // Use the preservedCheckId that was saved when new timestamp was detected
+                let targetCheckId = null;
+                if (shouldPreserveCheckId && preservedCheckId !== null) {
+                    targetCheckId = preservedCheckId;
+                    console.log(`Will look for check${targetCheckId}-report.html in new timestamp`);
+                }
+
                 const url = currentAutoLabPath ? `/api/reports?path=${encodeURIComponent(currentAutoLabPath)}` : '/api/reports';
                 const response = await fetch(url);
                 if (!response.ok) {
                     throw new Error('Failed to fetch reports');
                 }
 
-                reports = await response.json();
+                const newReports = await response.json();
 
-                if (reports.length === 0) {
+                if (newReports.length === 0) {
                     showNoReports();
                     return;
                 }
 
-                // Always show the newest report (first in the list)
-                currentTimestampIndex = 0;
-                currentCheckIndex = 0;
+                // Always show the newest timestamp (first in the list)
+                const newTimestampIndex = 0;
+                let newCheckIndex = 0;
+                
+                // Try to find the same checkId in the new timestamp
+                if (shouldPreserveCheckId && targetCheckId !== null) {
+                    const newReport = newReports[newTimestampIndex];
+                    const checkIndex = newReport.checks.findIndex(check => check.checkId === targetCheckId);
+                    
+                    if (checkIndex !== -1) {
+                        newCheckIndex = checkIndex;
+                        console.log(`✓ Found check${targetCheckId}-report.html in new timestamp at index ${checkIndex}`);
+                    } else {
+                        console.log(`✗ check${targetCheckId}-report.html not found in new timestamp, showing first report`);
+                        newCheckIndex = 0;
+                    }
+                    
+                    // Clear the preserved checkId after using it
+                    preservedCheckId = null;
+                } else {
+                    newCheckIndex = 0;
+                }
+
+                // Update global state
+                reports = newReports;
+                currentTimestampIndex = newTimestampIndex;
+                currentCheckIndex = newCheckIndex;
 
                 loadCurrentReport();
                 updateControls();
@@ -488,7 +587,7 @@
             const currentReport = reports[currentTimestampIndex];
             const currentCheck = currentReport.checks[currentCheckIndex];
 
-            const info = `Timestamp: ${currentReport.timestamp} | Check: ${currentCheck.checkId} | Total Checks: ${currentReport.checks.length}`;
+            const info = `Viewing: check${currentCheck.checkId}-report.html | Timestamp: ${currentReport.timestamp} | Check ${currentCheckIndex + 1}/${currentReport.checks.length}`;
             document.getElementById('reportInfo').textContent = info;
         }
 
