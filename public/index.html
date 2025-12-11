@@ -1,661 +1,74 @@
 <!DOCTYPE html>
 <html lang="en">
-
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>GradeBrowser - AutoLab Report Viewer</title>
-    <style>
-        :root {
-            --darkreader-neutral-background: var(--darkreader-background-ffffff, #181a1b);
-            --darkreader-neutral-text: var(--darkreader-text-000000, #e8e6e3);
-            --darkreader-selection-background: var(--darkreader-background-0060d4, #004daa);
-            --darkreader-selection-text: var(--darkreader-text-ffffff, #e8e6e3);
-            --darkreader-background-ffffff: #181a1b;
-            --darkreader-text-ffffff: #e8e6e3;
-            --darkreader-border-404040: #776e62;
-            --darkreader-text-000000: #e8e6e3;
-            --darkreader-border-4c4c4c: #736b5e;
-            --darkreader-text-0040ff: #3391ff;
-            --darkreader-border-808080: #545b5e;
-            --darkreader-text-a9a9a9: #b2aba1;
-            --darkreader-background-faffbd: #404400;
-            --darkreader-background-0060d4: #004daa;
-            --darkreader-background-ffd76e: #684b00;
-            --darkreader-background-c59d00: #9e7e00;
-            --darkreader-text-302505: #d7d4cf;
-            --darkreader-background-add8e6: #1b4958;
-            --darkreader-background-cfecf5: #0f3a47;
-            --darkreader-background-f5f5f5: #1e2021;
-            --darkreader-background-faedda: #432c09;
-            --darkreader-background-85c3d8: #245d70;
-            --darkreader-background-d3d3d3: #313537;
-            --darkreader-background-f08080: #7a0e0e;
-            --darkreader-text-808080: #988f81;
-            --darkreader-background-ffff00: #999900;
-            --darkreader-text-d3d3d3: #ccc8c1;
-            --darkreader-text-8b0000: #ff6b6b;
-            --darkreader-background-00000000: rgba(0, 0, 0, 0);
-            --darkreader-background-90ee90: #286f11;
-            --darkreader-background-808080: #60686c;
-            --darkreader-background-ff0000: #cc0000;
-        }
-
-
-        html,
-        body {
-            border-color: var(--darkreader-border-4c4c4c, #736b5e);
-            color: var(--darkreader-text-000000, #e8e6e3);
-        }
-
-        html,
-        body {
-            background-color: var(--darkreader-background-ffffff, #181a1b);
-        }
-
-
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
-
-        body {
-            font-family: Arial, sans-serif;
-            background-color: #f5f5f5;
-            height: 100vh;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .header {
-            background-color: #333;
-            color: white;
-            padding: 10px 20px;
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
-        }
-
-        .header h1 {
-            font-size: 1.5em;
-        }
-
-        .status {
-            font-size: 0.9em;
-            opacity: 0.8;
-        }
-
-        .status.connected {
-            color: #4CAF50;
-        }
-
-        .status.disconnected {
-            color: #f44336;
-        }
-
-        .status.waiting {
-            color: #ff9800;
-        }
-
-        .controls {
-            background-color: white;
-            padding: 15px 20px;
-            border-bottom: 1px solid #ddd;
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
-
-        .controls-top {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            flex-wrap: wrap;
-            gap: 10px;
-        }
-
-        .path-controls {
-            display: flex;
-            align-items: center;
-            gap: 10px;
-            flex-wrap: wrap;
-        }
-
-        .nav-controls {
-            display: flex;
-            gap: 10px;
-            align-items: center;
-        }
-
-        .btn {
-            background-color: #007bff;
-            color: white;
-            border: none;
-            padding: 8px 16px;
-            border-radius: 4px;
-            cursor: pointer;
-            font-size: 14px;
-            transition: background-color 0.2s;
-        }
-
-        .btn:hover {
-            background-color: #0056b3;
-        }
-
-        .btn:disabled {
-            background-color: #ccc;
-            cursor: not-allowed;
-        }
-
-        .btn.secondary {
-            background-color: #6c757d;
-        }
-
-        .btn.secondary:hover {
-            background-color: #545b62;
-        }
-
-        .info {
-            font-size: 14px;
-            color: #666;
-        }
-
-        .path-input {
-            flex: 1;
-            min-width: 300px;
-            padding: 8px 12px;
-            border: 1px solid #ddd;
-            border-radius: 4px;
-            font-size: 14px;
-        }
-
-        .path-input:focus {
-            outline: none;
-            border-color: #007bff;
-            box-shadow: 0 0 0 2px rgba(0, 123, 255, 0.25);
-        }
-
-        .content {
-            flex: 1;
-            overflow: hidden;
-            display: flex;
-            flex-direction: column;
-        }
-
-        .report-frame {
-            flex: 1;
-            border: none;
-            background-color: white;
-            width: 100%;
-            height: 100%;
-        }
-
-        .loading {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100%;
-            font-size: 18px;
-            color: #666;
-        }
-
-        .error {
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            height: 100%;
-            font-size: 18px;
-            color: #f44336;
-            text-align: center;
-            padding: 20px;
-        }
-
-        .hidden {
-            display: none;
-        }
-
-        @media (max-width: 768px) {
-            .controls {
-                flex-direction: column;
-                align-items: stretch;
-            }
-
-            .nav-controls {
-                justify-content: center;
-            }
-
-            .info {
-                text-align: center;
-                margin-top: 10px;
-            }
-        }
-    </style>
+    <link rel="stylesheet" href="styles.css">
 </head>
-
 <body>
     <div class="header">
         <h1>GradeBrowser</h1>
-        <div class="status disconnected" id="connectionStatus">
-            Disconnected
-        </div>
+        <div class="status disconnected" id="connectionStatus">Disconnected</div>
     </div>
 
     <div class="controls">
         <div class="controls-top">
-            <div class="nav-controls">
-                <button class="btn secondary" id="prevCheck" onclick="navigateCheck(-1)" disabled>
-                    ← Previous Check
-                </button>
-                <button class="btn secondary" id="nextCheck" onclick="navigateCheck(1)" disabled>
-                    Next Check →
-                </button>
-                <button class="btn" id="refreshBtn" onclick="refreshReports()">
-                    Refresh
-                </button>
+            <div class="path-controls">
+                <label for="autolabPath" style="font-weight: bold;">AutoLab Root Directory:</label>
+                <input type="text" id="autolabPath" class="path-input" placeholder="/path/to/autolab/reports" />
+                <button class="btn secondary" onclick="setAutoLabPath()">Set Path</button>
             </div>
-            <div class="info" id="reportInfo">
-                No reports available
+            <button class="btn" onclick="refreshAssignments()">Refresh</button>
+        </div>
+        <div class="controls-top">
+            <div class="dropdown-row">
+                <div class="dropdown-wrapper">
+                    <label class="dropdown-label">Assignment</label>
+                    <select class="dropdown" id="assignmentDropdown" onchange="onAssignmentChange()">
+                        <option value="">-- Select --</option>
+                    </select>
+                </div>
+                <div class="dropdown-wrapper">
+                    <label class="dropdown-label">Handout</label>
+                    <select class="dropdown" id="handoutDropdown" onchange="onHandoutChange()" disabled>
+                        <option value="">-- Select --</option>
+                    </select>
+                </div>
+                <div class="check-nav">
+                    <div class="dropdown-wrapper">
+                        <label class="dropdown-label">Check</label>
+                        <select class="dropdown" id="checkDropdown" onchange="onCheckChange()" disabled>
+                            <option value="">-- Select --</option>
+                        </select>
+                    </div>
+                    <button class="nav-btn" id="prevCheckBtn" onclick="navigateGradeCheck(-1)" disabled title="Previous check">&lt;</button>
+                    <button class="nav-btn" id="nextCheckBtn" onclick="navigateGradeCheck(1)" disabled title="Next check">&gt;</button>
+                    <button class="nav-btn newest" id="newestBtn" onclick="goToNewest()" disabled title="Go to newest">Newest</button>
+                    <div class="grading-indicator" id="gradingIndicator">
+                        <span class="spinner"></span>
+                        <span>Grading</span>
+                    </div>
+                </div>
             </div>
+            <div class="info" id="reportInfo">No reports available</div>
         </div>
-        <div class="path-controls">
-            <label for="autolabPath" style="font-weight: bold;">AutoLab Root Directory:</label>
-            <input type="text" id="autolabPath" class="path-input" placeholder="/path/to/autolab/reports" />
-            <button class="btn secondary" id="setPathBtn" onclick="setAutoLabPath()">
-                Set Path
-            </button>
-        </div>
+    </div>
+
+    <div class="tabs-container">
+        <div class="tabs" id="tabs"></div>
     </div>
 
     <div class="content">
         <iframe id="reportFrame" class="report-frame hidden"></iframe>
-        <div id="loadingMessage" class="loading">
-            Loading reports...
-        </div>
-        <div id="errorMessage" class="error hidden">
-            No reports found. Run some AutoLab tests to generate reports.
+        <div id="loadingMessage" class="loading hidden">Loading reports...</div>
+        <div id="errorMessage" class="error hidden">No reports found.</div>
+        <div id="emptyState" class="empty-state">
+            <div>📋</div>
+            <div>Loading...</div>
         </div>
     </div>
 
-    <script>
-        let reports = [];
-        let currentTimestampIndex = 0;
-        let currentCheckIndex = 0;
-        let ws = null;
-        let currentAutoLabPath = null;
-        let pendingRefreshTimer = null;
-        let lastFileActivity = null;
-        let newTimestampDetected = false;
-        let preservedCheckId = null; // Store the checkId we want to preserve
-        const FILE_ACTIVITY_DELAY = 800; // 0.8 seconds
-
-        // Initialize WebSocket connection
-        function initWebSocket() {
-            const protocol = window.location.protocol === 'https:' ? 'wss:' : 'ws:';
-            const wsUrl = `${protocol}//${window.location.host}`;
-
-            ws = new WebSocket(wsUrl);
-
-            ws.onopen = function () {
-                console.log('WebSocket connected');
-                updateConnectionStatus(true);
-                refreshReports();
-            };
-
-            ws.onclose = function () {
-                console.log('WebSocket disconnected');
-                updateConnectionStatus(false);
-                // Attempt to reconnect after 3 seconds
-                setTimeout(initWebSocket, 3000);
-            };
-
-            ws.onerror = function (error) {
-                console.error('WebSocket error:', error);
-                updateConnectionStatus(false);
-            };
-
-            ws.onmessage = function (event) {
-                const message = JSON.parse(event.data);
-                console.log('WebSocket message:', message);
-
-                if (message.event === 'newReport' || message.event === 'reportChanged') {
-                    const filePath = message.data.filePath;
-                    
-                    // Only process HTML report files
-                    if (!filePath.endsWith('-report.html')) {
-                        console.log('Ignoring non-report file:', filePath);
-                        return;
-                    }
-                    
-                    // Check if this is a new timestamp folder
-                    const timestampMatch = filePath.match(/(\d{4}-\d{2}-\d{2}-\d{2}-\d{2}-\d{2})/);
-                    
-                    if (!timestampMatch) {
-                        console.log('Could not extract timestamp from:', filePath);
-                        return;
-                    }
-                    
-                    const newTimestamp = timestampMatch[1];
-                    const currentTimestamp = reports.length > 0 ? reports[currentTimestampIndex].timestamp : null;
-                    
-                    // Only handle files in NEW timestamp folders
-                    if (newTimestamp === currentTimestamp) {
-                        console.log('File in current timestamp, refreshing immediately');
-                        refreshReports(false); // Just refresh, don't preserve
-                        return;
-                    }
-                    
-                    // This is a new timestamp - start/continue the settling process
-                    console.log(`File in new timestamp: ${newTimestamp} (current: ${currentTimestamp})`);
-                    lastFileActivity = Date.now();
-                    
-                    if (!newTimestampDetected) {
-                        // First time detecting this new timestamp - save current checkId
-                        newTimestampDetected = true;
-                        
-                        if (reports.length > 0 && reports[currentTimestampIndex] && reports[currentTimestampIndex].checks[currentCheckIndex]) {
-                            preservedCheckId = reports[currentTimestampIndex].checks[currentCheckIndex].checkId;
-                            console.log(`Saving current report: check${preservedCheckId}-report.html`);
-                        }
-                        
-                        updateConnectionStatus('waiting');
-                    }
-                    
-                    // Clear any pending refresh timer
-                    if (pendingRefreshTimer) {
-                        clearTimeout(pendingRefreshTimer);
-                    }
-                    
-                    // Set a new timer to refresh after delay
-                    pendingRefreshTimer = setTimeout(() => {
-                        console.log(`No new files for ${FILE_ACTIVITY_DELAY}ms, loading new timestamp...`);
-                        if (preservedCheckId) {
-                            console.log(`Attempting to stay on check${preservedCheckId}-report.html`);
-                        }
-                        updateConnectionStatus(true); // Back to connected
-                        refreshReports(true); // true = preserve current checkId
-                        newTimestampDetected = false;
-                        preservedCheckId = null;
-                    }, FILE_ACTIVITY_DELAY);
-                }
-            };
-        }
-
-        function updateConnectionStatus(connected) {
-            const statusEl = document.getElementById('connectionStatus');
-            if (connected === 'waiting') {
-                statusEl.textContent = `Waiting for files to settle (${FILE_ACTIVITY_DELAY}ms)...`;
-                statusEl.className = 'status waiting';
-            } else if (connected) {
-                statusEl.textContent = 'Connected';
-                statusEl.className = 'status connected';
-            } else {
-                statusEl.textContent = 'Disconnected';
-                statusEl.className = 'status disconnected';
-            }
-        }
-
-        // Set AutoLab root path
-        async function setAutoLabPath() {
-            const pathInput = document.getElementById('autolabPath');
-            const path = pathInput.value.trim();
-            
-            if (!path) {
-                alert('Please enter a path to the AutoLab root directory');
-                return;
-            }
-
-            try {
-                const response = await fetch('/api/set-path', {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({ path: path })
-                });
-
-                if (!response.ok) {
-                    const error = await response.json();
-                    throw new Error(error.error || 'Failed to set path');
-                }
-
-                currentAutoLabPath = path;
-                console.log('AutoLab path set to:', path);
-                
-                // Refresh reports with new path
-                refreshReports();
-                
-            } catch (error) {
-                console.error('Error setting path:', error);
-                alert('Error setting path: ' + error.message);
-            }
-        }
-
-        // Load all reports from the server
-        async function refreshReports(shouldPreserveCheckId = false) {
-            try {
-                // Use the preservedCheckId that was saved when new timestamp was detected
-                let targetCheckId = null;
-                if (shouldPreserveCheckId && preservedCheckId !== null) {
-                    targetCheckId = preservedCheckId;
-                    console.log(`Will look for check${targetCheckId}-report.html in new timestamp`);
-                }
-
-                const url = currentAutoLabPath ? `/api/reports?path=${encodeURIComponent(currentAutoLabPath)}` : '/api/reports';
-                const response = await fetch(url);
-                if (!response.ok) {
-                    throw new Error('Failed to fetch reports');
-                }
-
-                const newReports = await response.json();
-
-                if (newReports.length === 0) {
-                    showNoReports();
-                    return;
-                }
-
-                // Always show the newest timestamp (first in the list)
-                const newTimestampIndex = 0;
-                let newCheckIndex = 0;
-                
-                // Try to find the same checkId in the new timestamp
-                if (shouldPreserveCheckId && targetCheckId !== null) {
-                    const newReport = newReports[newTimestampIndex];
-                    const checkIndex = newReport.checks.findIndex(check => check.checkId === targetCheckId);
-                    
-                    if (checkIndex !== -1) {
-                        newCheckIndex = checkIndex;
-                        console.log(`✓ Found check${targetCheckId}-report.html in new timestamp at index ${checkIndex}`);
-                    } else {
-                        console.log(`✗ check${targetCheckId}-report.html not found in new timestamp, showing first report`);
-                        newCheckIndex = 0;
-                    }
-                    
-                    // Clear the preserved checkId after using it
-                    preservedCheckId = null;
-                } else {
-                    newCheckIndex = 0;
-                }
-
-                // Update global state
-                reports = newReports;
-                currentTimestampIndex = newTimestampIndex;
-                currentCheckIndex = newCheckIndex;
-
-                loadCurrentReport();
-                updateControls();
-
-            } catch (error) {
-                console.error('Error loading reports:', error);
-                showError('Failed to load reports');
-            }
-        }
-
-        // Load the currently selected report
-        async function loadCurrentReport() {
-            if (reports.length === 0) return;
-
-            const currentReport = reports[currentTimestampIndex];
-            const currentCheck = currentReport.checks[currentCheckIndex];
-
-            if (!currentCheck) {
-                showError('No checks available for this timestamp');
-                return;
-            }
-
-            try {
-                showLoading();
-
-                const response = await fetch(`/api/report/${currentReport.timestamp}/${currentCheck.checkId}`);
-                if (!response.ok) {
-                    throw new Error('Failed to load report');
-                }
-
-                const htmlContent = await response.text();
-
-                // Update iframe content
-                const frame = document.getElementById('reportFrame');
-                frame.srcdoc = htmlContent;
-                frame.classList.remove('hidden');
-
-                // Update info display
-                updateReportInfo();
-
-                hideLoading();
-                hideError();
-
-            } catch (error) {
-                console.error('Error loading report:', error);
-                showError('Failed to load report');
-            }
-        }
-
-        // Navigate between checks
-        function navigateCheck(direction) {
-            if (reports.length === 0) return;
-
-            const currentReport = reports[currentTimestampIndex];
-
-            if (direction === -1) {
-                // Previous check
-                if (currentCheckIndex > 0) {
-                    currentCheckIndex--;
-                } else if (currentTimestampIndex < reports.length - 1) {
-                    // Move to previous timestamp, last check
-                    currentTimestampIndex++;
-                    currentCheckIndex = reports[currentTimestampIndex].checks.length - 1;
-                }
-            } else {
-                // Next check
-                if (currentCheckIndex < currentReport.checks.length - 1) {
-                    currentCheckIndex++;
-                } else if (currentTimestampIndex > 0) {
-                    // Move to next timestamp, first check
-                    currentTimestampIndex--;
-                    currentCheckIndex = 0;
-                }
-            }
-
-            loadCurrentReport();
-            updateControls();
-        }
-
-        // Update navigation controls
-        function updateControls() {
-            const prevBtn = document.getElementById('prevCheck');
-            const nextBtn = document.getElementById('nextCheck');
-
-            if (reports.length === 0) {
-                prevBtn.disabled = true;
-                nextBtn.disabled = true;
-                return;
-            }
-
-            const currentReport = reports[currentTimestampIndex];
-            const hasPrev = currentCheckIndex > 0 || currentTimestampIndex < reports.length - 1;
-            const hasNext = currentCheckIndex < currentReport.checks.length - 1 || currentTimestampIndex > 0;
-
-            prevBtn.disabled = !hasPrev;
-            nextBtn.disabled = !hasNext;
-        }
-
-        // Update report info display
-        function updateReportInfo() {
-            if (reports.length === 0) return;
-
-            const currentReport = reports[currentTimestampIndex];
-            const currentCheck = currentReport.checks[currentCheckIndex];
-
-            const info = `Viewing: check${currentCheck.checkId}-report.html | Timestamp: ${currentReport.timestamp} | Check ${currentCheckIndex + 1}/${currentReport.checks.length}`;
-            document.getElementById('reportInfo').textContent = info;
-        }
-
-        // Show/hide different states
-        function showLoading() {
-            document.getElementById('loadingMessage').classList.remove('hidden');
-            document.getElementById('reportFrame').classList.add('hidden');
-            document.getElementById('errorMessage').classList.add('hidden');
-        }
-
-        function hideLoading() {
-            document.getElementById('loadingMessage').classList.add('hidden');
-        }
-
-        function showError(message) {
-            document.getElementById('errorMessage').textContent = message;
-            document.getElementById('errorMessage').classList.remove('hidden');
-            document.getElementById('reportFrame').classList.add('hidden');
-            document.getElementById('loadingMessage').classList.add('hidden');
-        }
-
-        function hideError() {
-            document.getElementById('errorMessage').classList.add('hidden');
-        }
-
-        function showNoReports() {
-            showError('No reports found. Run some AutoLab tests to generate reports.');
-        }
-
-        // Keyboard navigation
-        document.addEventListener('keydown', function (event) {
-            // Only handle arrow keys if not in an input field
-            if (event.target.tagName === 'INPUT' || event.target.tagName === 'TEXTAREA') {
-                return;
-            }
-
-            switch (event.key) {
-                case 'ArrowLeft':
-                case 'ArrowUp':
-                    event.preventDefault();
-                    navigateCheck(-1);
-                    break;
-                case 'ArrowRight':
-                case 'ArrowDown':
-                    event.preventDefault();
-                    navigateCheck(1);
-                    break;
-                case 'r':
-                case 'R':
-                    if (event.ctrlKey || event.metaKey) {
-                        event.preventDefault();
-                        refreshReports();
-                    }
-                    break;
-            }
-        });
-
-        // Initialize the application
-        document.addEventListener('DOMContentLoaded', function () {
-            initWebSocket();
-
-            // Set default path in input field
-            document.getElementById('autolabPath').placeholder = 'Enter path to AutoLab root directory...';
-            
-            // Also try to load reports immediately (in case WebSocket takes time)
-            refreshReports();
-        });
-    </script>
+    <script src="app.js"></script>
 </body>
-
 </html>

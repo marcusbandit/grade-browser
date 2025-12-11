@@ -6,16 +6,8 @@ Created because I was tired of copying and pasting HTML file locations from the 
 ## Prerequisites
 
 - [Git](https://git-scm.com/)
-- [Node.js](https://nodejs.org/en/download) (version 14 or higher)
-- npm (comes with Node.js) 
+- [Bun](https://bun.sh/) (JavaScript runtime & package manager)
 - AutoLab installation with grading reports
-
-- Tho i reccoment bun
-
-
-### Node install guide
-
-
 
 ## Quick Start
 
@@ -23,20 +15,31 @@ Created because I was tired of copying and pasting HTML file locations from the 
 
    ```bash
    git clone https://github.com/marcusbandit/grade-browser.git
+   cd grade-browser
    ```
 
    *Or download the ZIP from GitHub and extract it to a folder.*
 
-2. **Install dependencies**:
+2. **Run the setup script** (installs Bun if needed and dependencies):
 
    ```bash
-   npm install
+   ./setup.sh
+   ```
+
+   Or manually:
+
+   ```bash
+   # Install Bun (if not already installed)
+   curl -fsSL https://bun.sh/install | bash
+
+   # Install dependencies
+   bun install
    ```
 
 3. **Start the server**:
 
    ```bash
-   npm start
+   bun run start
    ```
 
 4. **Open your browser** and navigate to `http://localhost:3000`
@@ -64,7 +67,7 @@ Set the `AUTOLAB_ROOT` environment variable:
 
 ```bash
 export AUTOLAB_ROOT="/path/to/your/autolab/directory"
-npm start
+bun run start
 ```
 
 #### Option 3: Modify server.js (Not Recommended)
@@ -83,7 +86,7 @@ const PORT = 3000; // Change this port
 
 ### Setting Up AutoLab Directory
 
-1. **Start the server**: `npm start`
+1. **Start the server**: `bun run start`
 2. **Open browser**: Navigate to `http://localhost:3000`
 3. **Set AutoLab path**: Enter the path to your AutoLab root directory in the input field
 4. **Click "Set Path"**: The application will scan for reports
@@ -107,8 +110,8 @@ The interface shows the newest reports first and allows navigation through all a
 
 ### Scripts
 
-- `npm start` - Start the production server
-- `npm run dev` - Start the development server (same as start)
+- `bun run start` - Start the production server
+- `bun run dev` - Start the development server (same as start)
 
 ## Troubleshooting
 
