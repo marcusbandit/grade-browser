@@ -10,6 +10,9 @@ Created because I was tired of copying and pasting HTML file locations from the 
 - npm (comes with Node.js) 
 - AutoLab installation with grading reports
 
+- Tho i reccoment bun
+
+
 ### Node install guide
 
 
